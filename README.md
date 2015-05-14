@@ -66,11 +66,11 @@ Before we proceed, we need to register our app in Azure AD to obtain a client ID
 
 Be sure to replace `http://localhost` with your correct web server address if you are using a different server.
 
-IMAGE HERE
+![The Step 2 section of the App Registration Tool.](https://raw.githubusercontent.com/jasonjoh/php-tutorial/master/readme-images/registration-step-2.PNG)
 
 In Step 3, select `Read mail`. If you plan on going beyond this tutorial and trying Calendar or Contacts API, go ahead and select additional permissions as well. For the purposes of this tutorial though, only `Read mail` is required.
 
-IMAGE HERE
+![The Step 3 section of the App Registration Tool.](https://raw.githubusercontent.com/jasonjoh/php-tutorial/master/readme-images/registration-step-3.PNG)
 
 After clicking the **Register App** button, copy your client ID and secret from the tool. We will use them in the next section.
 
@@ -500,7 +500,7 @@ Update `./home.php` one final time to generate the table.
 
 Save your changes and run the app. You should now get a list of messages that looks something like this.
 
-IMAGE HERE
+![The finished app displaying the user's inbox.](https://raw.githubusercontent.com/jasonjoh/php-tutorial/master/readme-images/inbox-listing.PNG)
 
 ## Next Steps ##
 
