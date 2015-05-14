@@ -112,9 +112,9 @@ The class exposes one function for now, `getLoginUrl`. This function will genera
 	?>
 	
 	<html>
-		<head>
-			<title>PHP Mail API Tutorial</title>
-		</head>
+	  <head>
+  	    <title>PHP Mail API Tutorial</title>
+	  </head>
 	  <body>
 	    <?php 
 	      if (!$loggedIn) {
@@ -261,9 +261,9 @@ Finally, let's update the `./home.php` file to check for the presence of the acc
 	?>
 	
 	<html>
-		<head>
-			<title>PHP Mail API Tutorial</title>
-		</head>
+	  <head>
+	    <title>PHP Mail API Tutorial</title>
+	  </head>
 	  <body>
 	    <?php 
 	      if (!$loggedIn) {
@@ -365,22 +365,22 @@ Let's start by adding a new file to contain all of our Mail API functions called
 	    
 	    // This function generates a random GUID.
 	    public static function makeGuid(){
-	        if (function_exists('com_create_guid')) {
-	          error_log("Using 'com_create_guid'.");
-	          return strtolower(trim(com_create_guid(), '{}'));
-	        }
-	        else {
-	          error_log("Using custom GUID code.");
-	          $charid = strtolower(md5(uniqid(rand(), true)));
-	          $hyphen = chr(45);
-	          $uuid = substr($charid, 0, 8).$hyphen
-	                 .substr($charid, 8, 4).$hyphen
-	                 .substr($charid, 12, 4).$hyphen
-	                 .substr($charid, 16, 4).$hyphen
-	                 .substr($charid, 20, 12);
-	                 
-	          return $uuid;
-	        }
+          if (function_exists('com_create_guid')) {
+            error_log("Using 'com_create_guid'.");
+            return strtolower(trim(com_create_guid(), '{}'));
+          }
+          else {
+            error_log("Using custom GUID code.");
+            $charid = strtolower(md5(uniqid(rand(), true)));
+            $hyphen = chr(45);
+            $uuid = substr($charid, 0, 8).$hyphen
+                   .substr($charid, 8, 4).$hyphen
+                   .substr($charid, 12, 4).$hyphen
+                   .substr($charid, 16, 4).$hyphen
+                   .substr($charid, 20, 12);
+                 
+            return $uuid;
+          }
 	    }
 	  }
 	?>
@@ -419,9 +419,9 @@ Update `./home.php` to call the `getMessages` function and display the results.
 	?>
 	
 	<html>
-		<head>
-			<title>PHP Mail API Tutorial</title>
-		</head>
+	  <head>
+	    <title>PHP Mail API Tutorial</title>
+	  </head>
 	  <body>
 	    <?php 
 	      if (!$loggedIn) {
@@ -460,9 +460,9 @@ Update `./home.php` one final time to generate the table.
 	?>
 	
 	<html>
-		<head>
-			<title>PHP Mail API Tutorial</title>
-		</head>
+	  <head>
+		<title>PHP Mail API Tutorial</title>
+	  </head>
 	  <body>
 	    <?php 
 	      if (!$loggedIn) {
