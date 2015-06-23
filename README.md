@@ -109,6 +109,7 @@ The class exposes one function for now, `getLoginUrl`. This function will genera
 	  require('oauth.php');
 	  
 	  $loggedIn = false;
+	  $redirectUri = 'http://localhost/php-tutorial/authorize.php';
 	?>
 	
 	<html>
@@ -120,7 +121,7 @@ The class exposes one function for now, `getLoginUrl`. This function will genera
 	      if (!$loggedIn) {
 	    ?>
 	      <!-- User not logged in, prompt for login -->
-	      <p>Please <a href="<?php echo oAuthService::getLoginUrl('http://localhost/php-tutorial/authorize.php')?>">sign in</a> with your Office 365 account.</p>
+	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 account.</p>
 	    <?php
 	      }
 	      else {
@@ -258,6 +259,7 @@ Finally, let's update the `./home.php` file to check for the presence of the acc
 	  require('oauth.php');
 	  
 	  $loggedIn = !is_null($_SESSION['access_token']);
+      $redirectUri = 'http://localhost/php-tutorial/authorize.php';
 	?>
 	
 	<html>
@@ -269,7 +271,7 @@ Finally, let's update the `./home.php` file to check for the presence of the acc
 	      if (!$loggedIn) {
 	    ?>
 	      <!-- User not logged in, prompt for login -->
-	      <p>Please <a href="<?php echo oAuthService::getLoginUrl('http://localhost/php-tutorial/authorize.php')?>">sign in</a> with your Office 365 account.</p>
+	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 account.</p>
 	    <?php
 	      }
 	      else {
@@ -416,6 +418,7 @@ Update `./home.php` to call the `getMessages` function and display the results.
 	  require('outlook.php');
 	  
 	  $loggedIn = !is_null($_SESSION['access_token']);
+      $redirectUri = 'http://localhost/php-tutorial/authorize.php';
 	?>
 	
 	<html>
@@ -427,7 +430,7 @@ Update `./home.php` to call the `getMessages` function and display the results.
 	      if (!$loggedIn) {
 	    ?>
 	      <!-- User not logged in, prompt for login -->
-	      <p>Please <a href="<?php echo oAuthService::getLoginUrl('http://localhost/php-tutorial/authorize.php')?>">sign in</a> with your Office 365 account.</p>
+	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 account.</p>
 	    <?php
 	      }
 	      else {
@@ -457,6 +460,7 @@ Update `./home.php` one final time to generate the table.
 	  require('outlook.php');
 	  
 	  $loggedIn = !is_null($_SESSION['access_token']);
+      $redirectUri = 'http://localhost/php-tutorial/authorize.php';
 	?>
 	
 	<html>
@@ -468,7 +472,7 @@ Update `./home.php` one final time to generate the table.
 	      if (!$loggedIn) {
 	    ?>
 	      <!-- User not logged in, prompt for login -->
-	      <p>Please <a href="<?php echo oAuthService::getLoginUrl('http://localhost/php-tutorial/authorize.php')?>">sign in</a> with your Office 365 account.</p>
+	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 account.</p>
 	    <?php
 	      }
 	      else {
