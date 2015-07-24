@@ -1,14 +1,22 @@
 <!-- Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file. -->
 <?php
   class oAuthService {
-    private static $clientId = "YOUR CLIENT ID HERE";
-    private static $clientSecret = "YOUR CLIENT SECRET HERE";
+    private static $clientId = "YOUR APP ID HERE";
+    private static $clientSecret = "YOUR APP PASSWORD HERE";
     private static $authority = "https://login.microsoftonline.com";
-    private static $authorizeUrl = '/common/oauth2/authorize?client_id=%1$s&redirect_uri=%2$s&response_type=code';
-    private static $tokenUrl = "/common/oauth2/token";
+    private static $authorizeUrl = '/common/oauth2/v2.0/authorize?client_id=%1$s&redirect_uri=%2$s&response_type=code&scope=%3$s';
+    private static $tokenUrl = "/common/oauth2/v2.0/token";
+    
+    // The app only needs Mail.Read
+    private static $scopes = array("https://outlook.office.com/mail.read");
     
     public static function getLoginUrl($redirectUri) {
-      $loginUrl = self::$authority.sprintf(self::$authorizeUrl, self::$clientId, urlencode($redirectUri));
+      // Build scope string. Multiple scopes are separated
+      // by a space
+      $scopestr = implode(" ", self::$scopes);
+      
+      $loginUrl = self::$authority.sprintf(self::$authorizeUrl, self::$clientId, urlencode($redirectUri), urlencode($scopestr));
+      
       error_log("Generated login URL: ".$loginUrl);
       return $loginUrl;
     }
@@ -19,13 +27,13 @@
         "grant_type" => "authorization_code",
         "code" => $authCode,
         "redirect_uri" => $redirectUri,
-        "resource" => "https://outlook.office365.com/",
+        "scope" => implode(" ", self::$scopes),
         "client_id" => self::$clientId,
         "client_secret" => self::$clientSecret
       );
       
       // Calling http_build_query is important to get the data
-      // formatted as Azure expects.
+      // formatted as expected.
       $token_request_body = http_build_query($token_request_data);
       error_log("Request body: ".$token_request_body);
       

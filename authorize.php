@@ -3,8 +3,9 @@
   session_start();
   require_once('oauth.php');
   $auth_code = $_GET['code'];
+  $redirectUri = 'http://localhost/php-tutorial/authorize.php';
   
-  $tokens = oAuthService::getTokenFromAuthCode($auth_code, 'http://localhost/php-tutorial/authorize.php');
+  $tokens = oAuthService::getTokenFromAuthCode($auth_code, $redirectUri);
   
   if ($tokens['access_token']) {
     $_SESSION['access_token'] = $tokens['access_token'];

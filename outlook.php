@@ -1,13 +1,19 @@
 <!-- Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file. -->
 <?php
   class OutlookService {
-    private static $outlookApiUrl = "https://outlook.office365.com/api/v1.0";
+    private static $outlookApiUrl = "https://outlook.office.com/api/v1.0";
     
     public static function getMessages($access_token) {
-      $getMessagesUrl = self::$outlookApiUrl."/Me/Messages?"
-                        ."\$select=Subject,DateTimeReceived,From"
-                        ."&\$orderby=DateTimeReceived"
-                        ."&\$top=10";
+      $getMessagesParameters = array (
+        // Only return Subject, DateTimeReceived, and From fields
+        "\$select" => "Subject,DateTimeReceived,From",
+        // Sort by DateTimeReceived, newest first
+        "\$orderby" => "DateTimeReceived DESC",
+        // Return at most 10 results
+        "\$top" => "10"
+      );
+      
+      $getMessagesUrl = self::$outlookApiUrl."/Me/Messages?".http_build_query($getMessagesParameters);
                         
       return self::makeApiCall($access_token, "GET", $getMessagesUrl);
     }
@@ -52,7 +58,7 @@
           error_log("INVALID METHOD: ".$method);
           exit;
       }
-      
+        
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
       curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
       $response = curl_exec($curl);

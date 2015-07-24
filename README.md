@@ -1,6 +1,6 @@
 # Getting Started with the Outlook Mail API and PHP #
 
-The purpose of this guide is to walk through the process of creating a simple PHP app that retrieves messages in Office 365. The source code in this repository is what you should end up with if you follow the steps outlined here.
+The purpose of this guide is to walk through the process of creating a simple PHP app that retrieves messages in Office 365 or Outlook.com. The source code in this repository is what you should end up with if you follow the steps outlined here.
 
 This tutorial will use [cURL](http://php.net/manual/en/book.curl.php) to send oAuth2 and REST API calls.
 
@@ -17,7 +17,7 @@ Let's dive right in! On your web server, create a new directory beneath the root
 
 ## Designing the app ##
 
-Our app will be very simple. When a user visits the site, they will see a link to log in and view their email. Clicking that link will take them to the Azure login page where they can login with their Office 365 account and grant access to our app. Finally, they will be redirected back to our app, which will display a list of the most recent email in the user's inbox.
+Our app will be very simple. When a user visits the site, they will see a link to log in and view their email. Clicking that link will take them to the Azure login page where they can login with their Office 365 or Outlook.com account and grant access to our app. Finally, they will be redirected back to our app, which will display a list of the most recent email in the user's inbox.
 
 Let's begin by replacing the stock home page with a simpler one. Open the `./home.php` file and add the following code.
 
@@ -37,7 +37,7 @@ Let's begin by replacing the stock home page with a simpler one. Open the `./hom
       	  if (!$loggedIn) {
     	?>
 		  <!-- User not logged in, prompt for login -->
-      	  <p>Please <a href="#">sign in</a> with your Office 365 account.</p>
+      	  <p>Please <a href="#">sign in</a> with your Office 365 or Outlook.com account.</p>
     	<?php
   		  }
       	  else {
@@ -56,23 +56,19 @@ The link doesn't do anything yet, but we'll fix that soon.
 
 Our goal in this section is to make the link on our home page initiate the [OAuth2 Authorization Code Grant flow with Azure AD](https://msdn.microsoft.com/en-us/library/azure/dn645542.aspx). 
 
-Before we proceed, we need to register our app in Azure AD to obtain a client ID and secret. Head over to https://dev.outlook.com/appregistration to quickly get a client ID and secret. Assuming you are using `http://localhost` as your web server, use the following values for Step 2:
+Before we proceed, we need to register our app to obtain a client ID and secret. Head over to https://apps.dev.microsoft.com to quickly get a client ID and secret. Using the sign in buttons, sign in with either your Microsoft account (Outlook.com), or your work or school account (Office 365).
 
-- **App Name:** php-tutorial
-- **App Type:** Server-side Web app
-- **Redirect URI:** http://localhost/php-tutorial/authorize.php
-- **Home Page URL:** http://localhost/php-tutorial/home.php
-- **Secret Valid For:** 1 year
+IMAGE HERE
 
-Be sure to replace `http://localhost` with your correct web server address if you are using a different server.
+Once you're signed in, click the **Add an app** button. Enter `php-tutorial` for the name and click **Create application**. After the app is created, locate the **Application Secrets** section, and click the **Generate New Password** button. Copy the password now and save it to a safe place. Once you've copied the password, click **Ok**.
 
-![The Step 2 section of the App Registration Tool.](https://raw.githubusercontent.com/jasonjoh/php-tutorial/master/readme-images/registration-step-2.PNG)
+IMAGE HERE
 
-In Step 3, select `Read mail`. If you plan on going beyond this tutorial and trying Calendar or Contacts API, go ahead and select additional permissions as well. For the purposes of this tutorial though, only `Read mail` is required.
+Locate the **Platforms** section, and click **Add Platform**. Choose **Web**, then enter `http://localhost/php-tutorial/authorize.php` under **Redirect URIs**. Click **Save** to complete the registration. Copy the **Application Id** and save it along with the password you copied earlier. We'll need those values soon.
 
-![The Step 3 section of the App Registration Tool.](https://raw.githubusercontent.com/jasonjoh/php-tutorial/master/readme-images/registration-step-3.PNG)
+Here's what the details of your app registration should look like when you are done.
 
-After clicking the **Register App** button, copy your client ID and secret from the tool. We will use them in the next section.
+IMAGE HERE
 
 ### Back to coding ###
 
@@ -81,26 +77,32 @@ Create a new file to contain all of our OAuth functions called `oauth.php`. In t
 #### Contents of the `./oauth.php` file ####
 
 	<?php
-	  session_start();
-
 	  class oAuthService {
-	    private static $clientId = "YOUR CLIENT ID HERE";
-	    private static $clientSecret = "YOUR CLIENT SECRET HERE";
+	    private static $clientId = "YOUR APP ID HERE";
+	    private static $clientSecret = "YOUR APP PASSWORD HERE";
 	    private static $authority = "https://login.microsoftonline.com";
-	    private static $authorizeUrl = '/common/oauth2/authorize?client_id=%1$s&redirect_uri=%2$s&response_type=code';
-	    private static $tokenUrl = "/common/oauth2/token";
+	    private static $authorizeUrl = '/common/oauth2/v2.0/authorize?client_id=%1$s&redirect_uri=%2$s&response_type=code&scope=%3$s';
+	    private static $tokenUrl = "/common/oauth2/v2.0/token";
+
+		// The app only needs Mail.Read
+		private static $scopes = array("https://outlook.office.com/mail.read");
 	    
-	    public static function getLoginUrl($redirectUri) {
-	      $loginUrl = self::$authority.sprintf(self::$authorizeUrl, self::$clientId, urlencode($redirectUri));
+	    public static function getLoginUrl($redirectUri, $scopes) {
+	      // Build scope string. Multiple scopes are separated
+	      // by a space
+	      $scopestr = implode(" ", self::$scopes);
+	      
+	      $loginUrl = self::$authority.sprintf(self::$authorizeUrl, self::$clientId, urlencode($redirectUri), urlencode($scopestr));
+	      
 	      error_log("Generated login URL: ".$loginUrl);
 	      return $loginUrl;
 	    }
 	  }
 	?>
 
-Paste in the client ID and secret you obtained from the App Registration Tool for the values of `$clientId` and `$clientSecret`.
+Paste in the app ID and password you obtained from the App Registration Tool for the values of `$clientId` and `$clientSecret`.
 
-The class exposes one function for now, `getLoginUrl`. This function will generate the URL to the Azure sign in page for the user to initiate the oAuth flow. Now we need to update the home page to call this function to provide a value for the `href` attribute of our sign in link.
+The class exposes one function for now, `getLoginUrl`. This function will generate the URL to the sign in page for the user to initiate the oAuth flow. Now we need to update the home page to call this function to provide a value for the `href` attribute of our sign in link.
 
 #### Updated contents of the `./home.php` file ####
 
@@ -121,7 +123,7 @@ The class exposes one function for now, `getLoginUrl`. This function will genera
 	      if (!$loggedIn) {
 	    ?>
 	      <!-- User not logged in, prompt for login -->
-	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 account.</p>
+	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 or Outlook.com account.</p>
 	    <?php
 	      }
 	      else {
@@ -136,7 +138,7 @@ The class exposes one function for now, `getLoginUrl`. This function will genera
 
 Save your work and copy the files to your web server. If you browse to `http://localhost/php-tutorial/home.php` and hover over the sign in link, it should look like this:
 
-	https://login.microsoftonline.com/common/oauth2/authorize?client_id=<SOME GUID>&redirect_uri=http%3A%2F%2Flocalhost%2Fphp-tutorial%2Fauthorize.php&response_type=code
+	https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=<SOME GUID>&redirect_uri=https%3A%2F%2Fcid.azurewebsites.net&response_type=code&scope=https%3A%2F%2Foutlook.office.com%2Fmail.read
 
 Clicking on the link will allow you to sign in and grant access to the app, but will then result in an error. Notice that your browser gets redirected to `http://localhost/php-tutorial/authorize.php`. That file doesn't exist yet. Don't worry, that's our next task.
 
@@ -145,6 +147,7 @@ Create the `authorize.php` file and add the following code.
 #### Contents of the `./authorize.php` file ####
 
 	<?php
+	  session_start();
 	  $auth_code = $_GET['code'];
 	?>
 	
@@ -164,13 +167,13 @@ Now let's add a new function to the `oAuthService` class to retrieve a token. Ad
         "grant_type" => "authorization_code",
         "code" => $authCode,
         "redirect_uri" => $redirectUri,
-        "resource" => "https://outlook.office365.com/",
+        "scope" => implode(" ", self::$scopes),
         "client_id" => self::$clientId,
         "client_secret" => self::$clientSecret
       );
       
       // Calling http_build_query is important to get the data
-      // formatted as Azure expects.
+      // formatted as expected.
       $token_request_body = http_build_query($token_request_data);
       error_log("Request body: ".$token_request_body);
       
@@ -212,17 +215,19 @@ Now let's add a new function to the `oAuthService` class to retrieve a token. Ad
       return $json_vals;
     }
 
-This function uses cURL to issue the access token request to Azure. The first part of this function is building the payload of the request, then the rest is using cURL to issue a POST request to the Azure OAuth2 Token endpoint. Finally, the results are parsed into an array of values using `json_decode`.
+This function uses cURL to issue the access token request to login.microsoftonline.com. The first part of this function is building the payload of the request, then the rest is using cURL to issue a POST request to the OAuth2 token endpoint. Finally, the results are parsed into an array of values using `json_decode`.
 
 Now replace the contents of the `./authorize.php` file with the following.
 
 #### Updated contents of `./authorize.php` ####
 
 	<?php
+      session_start();
 	  require_once('oauth.php');
 	  $auth_code = $_GET['code'];
+      $redirectUri = 'http://localhost/php-tutorial/authorize.php';
 	  
-	  $tokens = oAuthService::getTokenFromAuthCode($auth_code, 'http://localhost/php-tutorial/authorize.php');
+	  $tokens = oAuthService::getTokenFromAuthCode($auth_code, $redirectUri);
 	?>
 	
 	<p>Access Token: <?php echo $tokens['access_token'] ?></p>
@@ -235,8 +240,9 @@ Save your changes and restart the app. This time, after you sign in, you should 
 	  session_start();
 	  require_once('oauth.php');
 	  $auth_code = $_GET['code'];
+      $redirectUri = 'http://localhost/php-tutorial/authorize.php';
 	  
-	  $tokens = oAuthService::getTokenFromAuthCode($auth_code, 'http://localhost/php-tutorial/authorize.php');
+	  $tokens = oAuthService::getTokenFromAuthCode($auth_code, $redirectUri);
 	  
 	  if ($tokens['access_token']) {
 	    $_SESSION['access_token'] = $tokens['access_token'];
@@ -271,7 +277,7 @@ Finally, let's update the `./home.php` file to check for the presence of the acc
 	      if (!$loggedIn) {
 	    ?>
 	      <!-- User not logged in, prompt for login -->
-	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 account.</p>
+	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 or Outlook.com account.</p>
 	    <?php
 	      }
 	      else {
@@ -389,15 +395,23 @@ Let's start by adding a new file to contain all of our Mail API functions called
 
 This function uses cURL to send the appropriate request to the specified endpoint, using the access token for authentication. We can use this function to call any of Outlook REST APIs. Let's add a new function to the `OutlookService` class to get the user's 10 most recent messages from the inbox.
 
-In order to call our new `makeApiCall` function, we need an access token, a method, a URL, and an optional payload. We already have the access token, and from the [Mail API Reference](https://msdn.microsoft.com/office/office365/APi/mail-rest-operations#GetMessages), we know that the method to get messages is `GET` and that the URL to get messages is `https://outlook.office365.com/api/v1.0/me/messages`. Using that information, add a `getMessages` function in `outlook.php`.
+In order to call our new `makeApiCall` function, we need an access token, a method, a URL, and an optional payload. We already have the access token, and from the [Mail API Reference](https://msdn.microsoft.com/office/office365/APi/mail-rest-operations#GetMessages), we know that the method to get messages is `GET` and that the URL to get messages is `https://outlook.office.com/api/v1.0/me/messages`. Using that information, add a `getMessages` function in `outlook.php`.
 
 #### New `getMessages` function in `./outlook.php` ####
 
-	public static function getMessages($access_token) {
-      $getMessagesUrl = self::$outlookApiUrl."/Me/Messages?"
-                        ."\$select=Subject,DateTimeReceived,From"
-                        ."&\$orderby=DateTimeReceived"
-                        ."&\$top=10";
+	private static $outlookApiUrl = "https://outlook.office.com/api/v1.0";
+
+    public static function getMessages($access_token) {
+      $getMessagesParameters = array (
+        // Only return Subject, DateTimeReceived, and From fields
+        "\$select" => "Subject,DateTimeReceived,From",
+        // Sort by DateTimeReceived, newest first
+        "\$orderby" => "DateTimeReceived DESC",
+        // Return at most 10 results
+        "\$top" => "10"
+      );
+      
+      $getMessagesUrl = self::$outlookApiUrl."/Me/Messages?".http_build_query($getMessagesParameters);
                         
       return self::makeApiCall($access_token, "GET", $getMessagesUrl);
     }
@@ -430,7 +444,7 @@ Update `./home.php` to call the `getMessages` function and display the results.
 	      if (!$loggedIn) {
 	    ?>
 	      <!-- User not logged in, prompt for login -->
-	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 account.</p>
+	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 or Outlook.com account.</p>
 	    <?php
 	      }
 	      else {
@@ -472,7 +486,7 @@ Update `./home.php` one final time to generate the table.
 	      if (!$loggedIn) {
 	    ?>
 	      <!-- User not logged in, prompt for login -->
-	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 account.</p>
+	      <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 or Outlook.com account.</p>
 	    <?php
 	      }
 	      else {
