@@ -9,7 +9,7 @@ This tutorial will use [cURL](http://php.net/manual/en/book.curl.php) to send oA
 This guide assumes:
 
 - That you already have a web server with PHP installed and working, either on your development machine or on a remote server. The tutorial was created using PHP 5.6.0 running on IIS 8.
-- That you have an Office 365 tenant, with access to an account in that tenant.
+- That you have an Office 365 tenant, with access to an account in that tenant **OR** an Outlook.com developer preview account.
 
 ## Create the app ##
 
@@ -58,17 +58,17 @@ Our goal in this section is to make the link on our home page initiate the [OAut
 
 Before we proceed, we need to register our app to obtain a client ID and secret. Head over to https://apps.dev.microsoft.com to quickly get a client ID and secret. Using the sign in buttons, sign in with either your Microsoft account (Outlook.com), or your work or school account (Office 365).
 
-IMAGE HERE
+![The Application Registration Portal Sign In Page](https://raw.githubusercontent.com/jasonjoh/php-tutorial/master/readme-images/sign-in.PNG)
 
 Once you're signed in, click the **Add an app** button. Enter `php-tutorial` for the name and click **Create application**. After the app is created, locate the **Application Secrets** section, and click the **Generate New Password** button. Copy the password now and save it to a safe place. Once you've copied the password, click **Ok**.
 
-IMAGE HERE
+![The new password dialog.](https://raw.githubusercontent.com/jasonjoh/php-tutorial/master/readme-images/new-password.PNG)
 
 Locate the **Platforms** section, and click **Add Platform**. Choose **Web**, then enter `http://localhost/php-tutorial/authorize.php` under **Redirect URIs**. Click **Save** to complete the registration. Copy the **Application Id** and save it along with the password you copied earlier. We'll need those values soon.
 
 Here's what the details of your app registration should look like when you are done.
 
-IMAGE HERE
+![The completed registration properties.](https://raw.githubusercontent.com/jasonjoh/php-tutorial/master/readme-images/php-tutorial.PNG)
 
 ### Back to coding ###
 
