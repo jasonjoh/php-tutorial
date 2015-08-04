@@ -92,6 +92,9 @@
       $jwt = base64_decode($token);
       // Finally parse it as JSON
       $json_token = json_decode($jwt, true);
+      if (isset($json_token['email'])) {
+        return $json_token['email'];
+      }
       return $json_token['preferred_username'];
     }
   }
