@@ -84,8 +84,9 @@ Create a new file to contain all of our OAuth functions called `oauth.php`. In t
 	    private static $authorizeUrl = '/common/oauth2/v2.0/authorize?client_id=%1$s&redirect_uri=%2$s&response_type=code&scope=%3$s';
 	    private static $tokenUrl = "/common/oauth2/v2.0/token";
 
-		// The app only needs Mail.Read
-		private static $scopes = array("https://outlook.office.com/mail.read");
+		// The app only needs openid (for user's ID info), and Mail.Read
+    	private static $scopes = array("openid", 
+                                   	   "https://outlook.office.com/mail.read");
 	    
 	    public static function getLoginUrl($redirectUri, $scopes) {
 	      // Build scope string. Multiple scopes are separated
@@ -138,7 +139,7 @@ The class exposes one function for now, `getLoginUrl`. This function will genera
 
 Save your work and copy the files to your web server. If you browse to `http://localhost/php-tutorial/home.php` and hover over the sign in link, it should look like this:
 
-	https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=<SOME GUID>&redirect_uri=https%3A%2F%2Fcid.azurewebsites.net&response_type=code&scope=https%3A%2F%2Foutlook.office.com%2Fmail.read
+	https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=<SOME GUID>&redirect_uri=https%3A%2F%2Fcid.azurewebsites.net&response_type=code&scope=openid+https%3A%2F%2Foutlook.office.com%2Fmail.read
 
 Clicking on the link will allow you to sign in and grant access to the app, but will then result in an error. Notice that your browser gets redirected to `http://localhost/php-tutorial/authorize.php`. That file doesn't exist yet. Don't worry, that's our next task.
 
@@ -217,6 +218,33 @@ Now let's add a new function to the `oAuthService` class to retrieve a token. Ad
 
 This function uses cURL to issue the access token request to login.microsoftonline.com. The first part of this function is building the payload of the request, then the rest is using cURL to issue a POST request to the OAuth2 token endpoint. Finally, the results are parsed into an array of values using `json_decode`.
 
+### Getting the user's email address ###
+
+The array of values returned doesn't only include the access token. Since we included the `openid` scope in our request, it also contains in ID token. We can use this token to find out a few pieces of information about the logged on user. In this case, we want to get the user's email address. You'll see why we want this soon.
+
+Add a new function to the `oAuthService` class called `getUserEmailFromIdToken`.
+
+#### New `getUserEmailFromIdToken` function in `./oauth.php` ####
+
+    public static function getUserEmailFromIdToken($idToken) {
+      error_log("ID TOKEN: ".$idToken);
+      
+      // JWT is made of three parts, separated by a '.' 
+      // First part is the header 
+      // Second part is the token 
+      // Third part is the signature 
+      $token_parts = explode(".", $idToken);
+      
+      // We care about the token
+      // URL decode first
+      $token = strtr($token_parts[1], "-_", "+/");
+      // Then base64 decode
+      $jwt = base64_decode($token);
+      // Finally parse it as JSON
+      $json_token = json_decode($jwt, true);
+      return $json_token['preferred_username'];
+    }
+
 Now replace the contents of the `./authorize.php` file with the following.
 
 #### Updated contents of `./authorize.php` ####
@@ -232,7 +260,7 @@ Now replace the contents of the `./authorize.php` file with the following.
 	
 	<p>Access Token: <?php echo $tokens['access_token'] ?></p>
 
-Save your changes and restart the app. This time, after you sign in, you should see an access token displayed. Now let's update `./authorize.php` one more time to save the access token into a session variable and redirect back to the home page.
+Save your changes and restart the app. This time, after you sign in, you should see an access token displayed. Now let's update `./authorize.php` one more time to get the user's email address, save the access token and email address into session variables, and redirect back to the home page.
 
 #### Updated contents of `./authorize.php` ####
 
@@ -246,6 +274,10 @@ Save your changes and restart the app. This time, after you sign in, you should 
 	  
 	  if ($tokens['access_token']) {
 	    $_SESSION['access_token'] = $tokens['access_token'];
+
+		// Get the user's email from the ID token
+	    $user_email = oAuthService::getUserEmailFromIdToken($tokens['id_token']);
+	    $_SESSION['user_email'] = $user_email;
 	    
 	    // Redirect back to home page
 	    header("Location: http://localhost/php-tutorial/home.php");
@@ -300,14 +332,15 @@ Let's start by adding a new file to contain all of our Mail API functions called
 
 	<?php
 	  class OutlookService {
-	    public static function makeApiCall($access_token, $method, $url, $payload = NULL) {
+	    public static function makeApiCall($access_token, $user_email, $method, $url, $payload = NULL) {
 	      // Generate the list of headers to always send.
 	      $headers = array(
 	        "User-Agent: php-tutorial/1.0",         // Sending a User-Agent header is a best practice.
 	        "Authorization: Bearer ".$access_token, // Always need our auth token!
 	        "Accept: application/json",             // Always accept JSON response.
 	        "client-request-id: ".self::makeGuid(), // Stamp each new request with a new GUID.
-	        "return-client-request-id: true"        // Tell the server to include our request-id GUID in the response.
+	        "return-client-request-id: true",       // Tell the server to include our request-id GUID in the response.
+			"X-AnchorMailbox: ".$user_email         // Provider user's email to optimize routing of API call
 	      );
 	      
 	      $curl = curl_init($url);
@@ -393,15 +426,17 @@ Let's start by adding a new file to contain all of our Mail API functions called
 	  }
 	?>
 
-This function uses cURL to send the appropriate request to the specified endpoint, using the access token for authentication. We can use this function to call any of Outlook REST APIs. Let's add a new function to the `OutlookService` class to get the user's 10 most recent messages from the inbox.
+This function uses cURL to send the appropriate request to the specified endpoint, using the access token for authentication. It also uses the user's email address for an important optimization. By setting the `X-AnchorMailbox` header to the user's email address, the API endpoint can route API calls to the correct backend mailbox servers more efficiently. 
 
-In order to call our new `makeApiCall` function, we need an access token, a method, a URL, and an optional payload. We already have the access token, and from the [Mail API Reference](https://msdn.microsoft.com/office/office365/APi/mail-rest-operations#GetMessages), we know that the method to get messages is `GET` and that the URL to get messages is `https://outlook.office.com/api/v1.0/me/messages`. Using that information, add a `getMessages` function in `outlook.php`.
+We can use this function to call any of Outlook REST APIs. Let's add a new function to the `OutlookService` class to get the user's 10 most recent messages from the inbox.
+
+In order to call our new `makeApiCall` function, we need an access token, the user's email address, a method, a URL, and an optional payload. We already have the access token, and from the [Mail API Reference](https://msdn.microsoft.com/office/office365/APi/mail-rest-operations#GetMessages), we know that the method to get messages is `GET` and that the URL to get messages is `https://outlook.office.com/api/v1.0/me/messages`. Using that information, add a `getMessages` function in `outlook.php`.
 
 #### New `getMessages` function in `./outlook.php` ####
 
 	private static $outlookApiUrl = "https://outlook.office.com/api/v1.0";
 
-    public static function getMessages($access_token) {
+    public static function getMessages($access_token, $user_email) {
       $getMessagesParameters = array (
         // Only return Subject, DateTimeReceived, and From fields
         "\$select" => "Subject,DateTimeReceived,From",
@@ -413,7 +448,7 @@ In order to call our new `makeApiCall` function, we need an access token, a meth
       
       $getMessagesUrl = self::$outlookApiUrl."/Me/Messages?".http_build_query($getMessagesParameters);
                         
-      return self::makeApiCall($access_token, "GET", $getMessagesUrl);
+      return self::makeApiCall($access_token, $user_email, "GET", $getMessagesUrl);
     }
 
 The function uses OData query parameters to do the following.
@@ -448,7 +483,7 @@ Update `./home.php` to call the `getMessages` function and display the results.
 	    <?php
 	      }
 	      else {
-	        $messages = OutlookService::getMessages($_SESSION['access_token']);
+	        $messages = OutlookService::getMessages($_SESSION['access_token'], $_SESSION['user_email']);
 	    ?>
 	      <!-- User is logged in, do something here -->
 	      <p>Messages: <?php echo print_r($messages) ?></p>
@@ -490,7 +525,7 @@ Update `./home.php` one final time to generate the table.
 	    <?php
 	      }
 	      else {
-	        $messages = OutlookService::getMessages($_SESSION['access_token']);
+	        $messages = OutlookService::getMessages($_SESSION['access_token'], $_SESSION['user_email']);
 	    ?>
 	      <!-- User is logged in, do something here -->
 	      <h2>Your messages</h2>

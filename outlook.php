@@ -3,7 +3,7 @@
   class OutlookService {
     private static $outlookApiUrl = "https://outlook.office.com/api/v1.0";
     
-    public static function getMessages($access_token) {
+    public static function getMessages($access_token, $user_email) {
       $getMessagesParameters = array (
         // Only return Subject, DateTimeReceived, and From fields
         "\$select" => "Subject,DateTimeReceived,From",
@@ -15,17 +15,18 @@
       
       $getMessagesUrl = self::$outlookApiUrl."/Me/Messages?".http_build_query($getMessagesParameters);
                         
-      return self::makeApiCall($access_token, "GET", $getMessagesUrl);
+      return self::makeApiCall($access_token, $user_email, "GET", $getMessagesUrl);
     }
     
-    public static function makeApiCall($access_token, $method, $url, $payload = NULL) {
+    public static function makeApiCall($access_token, $user_email, $method, $url, $payload = NULL) {
       // Generate the list of headers to always send.
       $headers = array(
         "User-Agent: php-tutorial/1.0",         // Sending a User-Agent header is a best practice.
         "Authorization: Bearer ".$access_token, // Always need our auth token!
         "Accept: application/json",             // Always accept JSON response.
         "client-request-id: ".self::makeGuid(), // Stamp each new request with a new GUID.
-        "return-client-request-id: true"        // Tell the server to include our request-id GUID in the response.
+        "return-client-request-id: true",       // Tell the server to include our request-id GUID in the response.
+        "X-AnchorMailbox: ".$user_email         // Provider user's email to optimize routing of API call
       );
       
       $curl = curl_init($url);

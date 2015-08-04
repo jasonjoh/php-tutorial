@@ -10,6 +10,10 @@
   if ($tokens['access_token']) {
     $_SESSION['access_token'] = $tokens['access_token'];
     
+    // Get the user's email from the ID token
+    $user_email = oAuthService::getUserEmailFromIdToken($tokens['id_token']);
+    $_SESSION['user_email'] = $user_email;
+    
     // Redirect back to home page
     header("Location: http://localhost/php-tutorial/home.php");
   }
