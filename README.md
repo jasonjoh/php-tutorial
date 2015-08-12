@@ -12,14 +12,14 @@ This guide assumes:
 - That you have an Office 365 tenant, with access to an account in that tenant.
 
 ## Run the app ##
-If you've downloaded this sample from http://dev.office.com/getting-started/office365apis,  place the folder in document root, restart the php server and access the app at http://localhost/php-tutorial/home.php.
 
+If you've downloaded this sample from http://dev.office.com/getting-started/office365apis, and you signed in and registered the app, you're all set! Just place the folder in document root, restart the php server and access the app at http://localhost/php-tutorial/home.php. The download already includes the client ID and secret.
 
-Note: If you did not sign in, you will need to update your auth creds in the sample prior to running it.
+If you downloaded without signing in, or you downloaded directly from GitHub, then you'll need to follow the steps in **Implementing OAuth2** to register your app and get a client ID and secret.
 
 ## Or, create the app ##
 
-Let's dive right in! On your web server, create a new directory beneath the root directory called `php-tutorial`. For example, if you're using your development machine as your web server, the resulting URL would be `http://localhost/php-tutorial`. Within this directory create a `home.php` file and open it in your code editor of choice. This will be the home page for the app.
+If you want to recreate this app from scratch, then let's dive right in! On your web server, create a new directory beneath the root directory called `php-tutorial`. For example, if you're using your development machine as your web server, the resulting URL would be `http://localhost/php-tutorial`. Within this directory create a `home.php` file and open it in your code editor of choice. This will be the home page for the app.
 
 ## Designing the app ##
 
