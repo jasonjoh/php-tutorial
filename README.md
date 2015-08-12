@@ -11,7 +11,13 @@ This guide assumes:
 - That you already have a web server with PHP installed and working, either on your development machine or on a remote server. The tutorial was created using PHP 5.6.0 running on IIS 8.
 - That you have an Office 365 tenant, with access to an account in that tenant.
 
-## Create the app ##
+## Run the app ##
+If you've downloaded this sample from http://dev.office.com/getting-started/office365apis,  place the folder in document root, restart the php server and access the app at http://localhost/php-tutorial/home.php.
+
+
+Note: If you did not sign in, you will need to update your auth creds in the sample prior to running it.
+
+## Or, create the app ##
 
 Let's dive right in! On your web server, create a new directory beneath the root directory called `php-tutorial`. For example, if you're using your development machine as your web server, the resulting URL would be `http://localhost/php-tutorial`. Within this directory create a `home.php` file and open it in your code editor of choice. This will be the home page for the app.
 
