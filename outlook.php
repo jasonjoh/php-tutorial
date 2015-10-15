@@ -31,11 +31,6 @@
       
       $curl = curl_init($url);
       
-      // ENABLE FIDDLER TRACE 
-      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0); 
-      // SET PROXY TO FIDDLER PROXY 
-      curl_setopt($curl, CURLOPT_PROXY, "127.0.0.1:8888"); 
-      
       switch(strtoupper($method)) {
         case "GET":
           // Nothing to do, GET is the default and needs no
