@@ -430,18 +430,18 @@ This function uses cURL to send the appropriate request to the specified endpoin
 
 We can use this function to call any of Outlook REST APIs. Let's add a new function to the `OutlookService` class to get the user's 10 most recent messages from the inbox.
 
-In order to call our new `makeApiCall` function, we need an access token, the user's email address, a method, a URL, and an optional payload. We already have the access token, and from the [Mail API Reference](https://msdn.microsoft.com/office/office365/APi/mail-rest-operations#GetMessages), we know that the method to get messages is `GET` and that the URL to get messages is `https://outlook.office.com/api/v1.0/me/messages`. Using that information, add a `getMessages` function in `outlook.php`.
+In order to call our new `makeApiCall` function, we need an access token, the user's email address, a method, a URL, and an optional payload. We already have the access token, and from the [Mail API Reference](https://msdn.microsoft.com/office/office365/APi/mail-rest-operations#GetMessages), we know that the method to get messages is `GET` and that the URL to get messages is `https://outlook.office.com/api/v2.0/me/messages`. Using that information, add a `getMessages` function in `outlook.php`.
 
 #### New `getMessages` function in `./outlook.php` ####
 
-	private static $outlookApiUrl = "https://outlook.office.com/api/v1.0";
+	private static $outlookApiUrl = "https://outlook.office.com/api/v2.0";
 
     public static function getMessages($access_token, $user_email) {
       $getMessagesParameters = array (
-        // Only return Subject, DateTimeReceived, and From fields
-        "\$select" => "Subject,DateTimeReceived,From",
-        // Sort by DateTimeReceived, newest first
-        "\$orderby" => "DateTimeReceived DESC",
+        // Only return Subject, ReceivedDateTime, and From fields
+        "\$select" => "Subject,ReceivedDateTime,From",
+        // Sort by ReceivedDateTime, newest first
+        "\$orderby" => "ReceivedDateTime DESC",
         // Return at most 10 results
         "\$top" => "10"
       );
@@ -453,7 +453,7 @@ In order to call our new `makeApiCall` function, we need an access token, the us
 
 The function uses OData query parameters to do the following.
 
-- Request that only the `Subject`, `DateTimeReceived`, and `From` fields for each message be returned. It's always a good idea to limit your result set to only those fields that you will use in your app.
+- Request that only the `Subject`, `ReceivedDateTime`, and `From` fields for each message be returned. It's always a good idea to limit your result set to only those fields that you will use in your app.
 - Sort the results by date and time each message was received.
 - Limit the results to the first 10 items.
 
@@ -541,7 +541,7 @@ Update `./home.php` one final time to generate the table.
 	          <tr>
 	            <td><?php echo $message['From']['EmailAddress']['Name'] ?></td>
 	            <td><?php echo $message['Subject'] ?></td>
-	            <td><?php echo $message['DateTimeReceived'] ?></td>
+	            <td><?php echo $message['ReceivedDateTime'] ?></td>
 	          </tr>
 	        <?php } ?>
 	      </table>
