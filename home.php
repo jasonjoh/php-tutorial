@@ -37,7 +37,7 @@
           <tr>
             <td><?php echo $message['From']['EmailAddress']['Name'] ?></td>
             <td><?php echo $message['Subject'] ?></td>
-            <td><?php echo $message['DateTimeReceived'] ?></td>
+            <td><?php echo $message['ReceivedDateTime'] ?></td>
           </tr>
         <?php } ?>
       </table>

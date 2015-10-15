@@ -1,14 +1,14 @@
 <!-- Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file. -->
 <?php
   class OutlookService {
-    private static $outlookApiUrl = "https://outlook.office.com/api/v1.0";
+    private static $outlookApiUrl = "https://outlook.office.com/api/v2.0";
     
     public static function getMessages($access_token, $user_email) {
       $getMessagesParameters = array (
-        // Only return Subject, DateTimeReceived, and From fields
-        "\$select" => "Subject,DateTimeReceived,From",
-        // Sort by DateTimeReceived, newest first
-        "\$orderby" => "DateTimeReceived DESC",
+        // Only return Subject, ReceivedDateTime, and From fields
+        "\$select" => "Subject,ReceivedDateTime,From",
+        // Sort by ReceivedDateTime, newest first
+        "\$orderby" => "ReceivedDateTime DESC",
         // Return at most 10 results
         "\$top" => "10"
       );
@@ -30,6 +30,11 @@
       );
       
       $curl = curl_init($url);
+      
+      // ENABLE FIDDLER TRACE 
+      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0); 
+      // SET PROXY TO FIDDLER PROXY 
+      curl_setopt($curl, CURLOPT_PROXY, "127.0.0.1:8888"); 
       
       switch(strtoupper($method)) {
         case "GET":
