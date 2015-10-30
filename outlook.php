@@ -18,6 +18,36 @@
       return self::makeApiCall($access_token, $user_email, "GET", $getMessagesUrl);
     }
     
+    public static function getEvents($access_token, $user_email) {
+      $getEventsParameters = array (
+        // Only return Subject, Start, and End fields
+        "\$select" => "Subject,Start,End",
+        // Sort by Start, oldest first
+        "\$orderby" => "Start",
+        // Return at most 10 results
+        "\$top" => "10"
+      );
+          
+      $getEventsUrl = self::$outlookApiUrl."/Me/Events?".http_build_query($getEventsParameters);
+                          
+      return self::makeApiCall($access_token, $user_email, "GET", $getEventsUrl);
+    }
+    
+    public static function getContacts($access_token, $user_email) {
+      $getContactsParameters = array (
+        // Only return GivenName, Surname, and EmailAddresses fields
+        "\$select" => "GivenName,Surname,EmailAddresses",
+        // Sort by GivenName, A-Z
+        "\$orderby" => "GivenName",
+        // Return at most 10 results
+        "\$top" => "10"
+      );
+          
+      $getContactsUrl = self::$outlookApiUrl."/Me/Contacts?".http_build_query($getContactsParameters);
+                      
+      return self::makeApiCall($access_token, $user_email, "GET", $getContactsUrl);
+    }
+    
     public static function makeApiCall($access_token, $user_email, $method, $url, $payload = NULL) {
       // Generate the list of headers to always send.
       $headers = array(
