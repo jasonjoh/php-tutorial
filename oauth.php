@@ -9,7 +9,9 @@
     
     // The app only needs openid (for user's ID info), and Mail.Read
     private static $scopes = array("openid", 
-                                   "https://outlook.office.com/mail.read");
+                                   "https://outlook.office.com/mail.read",
+                                   "https://outlook.office.com/calendars.read",
+                                   "https://outlook.office.com/contacts.read");
     
     public static function getLoginUrl($redirectUri) {
       // Build scope string. Multiple scopes are separated
