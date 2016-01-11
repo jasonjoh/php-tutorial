@@ -23,7 +23,7 @@
         // Only return Subject, Start, and End fields
         "\$select" => "Subject,Start,End",
         // Sort by Start, oldest first
-        "\$orderby" => "Start",
+        "\$orderby" => "Start/DateTime",
         // Return at most 10 results
         "\$top" => "10"
       );
