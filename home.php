@@ -21,7 +21,7 @@
     <?php
       }
       else {
-        $messages = OutlookService::getMessages($_SESSION['access_token'], $_SESSION['user_email']);
+        $messages = OutlookService::getMessages(oAuthService::getAccessToken($redirectUri), $_SESSION['user_email']);
     ?>
       <!-- User is logged in, do something here -->
       <h2>Your messages</h2>

@@ -168,14 +168,14 @@ This doesn't do anything but display the authorization code returned by Azure, b
 
 Now let's add a new function to the `oAuthService` class to retrieve a token. Add the following function to the class in the `./oauth.php` file.
 
-#### New `getTokenFromAuthCode` function in `./oauth.php` ####
+#### New `getToken` function in `./oauth.php` ####
 
 ```PHP
-public static function getTokenFromAuthCode($authCode, $redirectUri) {
+public static function getToken($grantType, $code, $redirectUri) {
   // Build the form data to post to the OAuth2 token endpoint
   $token_request_data = array(
-    "grant_type" => "authorization_code",
-    "code" => $authCode,
+    "grant_type" => $grantType,
+    "code" => $code,
     "redirect_uri" => $redirectUri,
     "scope" => implode(" ", self::$scopes),
     "client_id" => self::$clientId,
@@ -228,7 +228,17 @@ public static function getTokenFromAuthCode($authCode, $redirectUri) {
 
 This function uses cURL to issue the access token request to login.microsoftonline.com. The first part of this function is building the payload of the request, then the rest is using cURL to issue a POST request to the OAuth2 token endpoint. Finally, the results are parsed into an array of values using `json_decode`.
 
-Let's see if this works. Replace the contents of the `./authorize.php` file with the following.
+Now add a wrapper function to pass the correct grant type in the `$grantType` parameter for exchanging an authorization code for a token.
+
+#### New `getTokenFromAuthCode` function in `./oauth.php` ####
+
+```PHP
+public static function getTokenFromAuthCode($authCode, $redirectUri) {
+  return self::getToken("authorization_code", $authCode, $redirectUri);
+}
+```
+
+Structuring the code this way will allow us to reuse the `getToken` function later. Let's see if this works. Replace the contents of the `./authorize.php` file with the following.
 
 #### Updated contents of `./authorize.php` ####
 
@@ -441,7 +451,113 @@ Finally, let's update the `./home.php` file to check for the presence of the acc
 </html>
 ```
 
-Now that we have an access token, we're ready to use the Mail API.
+### Refreshing the access token
+
+Access tokens returned from Azure are valid for an hour. If you use the token after it has expired, the API calls will return 401 errors. You could ask the user to sign in again, but the better option is to refresh the token silently.
+
+In order to do that, the app must request the `offline_access` scope. Add this scope to the `$scopes` array in `oauth.php`:
+
+```PHP
+// The scopes the app requires
+private static $scopes = array("openid",
+                               "offline_access",
+                               "https://outlook.office.com/mail.read");
+```
+
+This will cause the token response from Azure to include a refresh token. Let's update `authorize.php` to save the refresh token and the expiration time in a session cookie.
+
+#### Updated contents of `./authorize.php` ####
+
+```PHP
+<?php
+  session_start();
+  require_once('oauth.php');
+  require_once('outlook.php');
+  $auth_code = $_GET['code'];
+  $redirectUri = 'http://localhost/php-tutorial/authorize.php';
+  
+  $tokens = oAuthService::getTokenFromAuthCode($auth_code, $redirectUri);
+  
+  if ($tokens['access_token']) {
+    $_SESSION['access_token'] = $tokens['access_token'];
+    $_SESSION['refresh_token'] = $tokens['refresh_token'];
+
+    // expires_in is in seconds
+    // Get current timestamp (seconds since Unix Epoch) and
+    // add expires_in to get expiration time
+    // Subtract 5 minutes to allow for clock differences
+    $expiration = time() + $tokens['expires_in'] - 300;
+    $_SESSION['token_expires'] = $expiration;
+    
+    // Get the user's email
+    $user = OutlookService::getUser($tokens['access_token']);
+    $_SESSION['user_email'] = $user['EmailAddress'];
+    
+    // Redirect back to home page
+    header("Location: http://localhost/php-tutorial/home.php");
+  }
+  else
+  {
+    echo "<p>ERROR: ".$tokens['error']."</p>";
+  }
+?>
+```
+
+Then let's add a function to call the `getToken` function to refresh our tokens.
+
+#### New `getTokenFromRefreshToken` function in `./oauth.php` ####
+
+```PHP
+public static function getTokenFromRefreshToken($refreshToken, $redirectUri) {
+  return self::getToken("refresh_token", $refreshToken, $redirectUri);
+}
+```
+
+Now let's add a helper function to automatically refresh the token if needed. Add the following function to `oauth.php`.
+
+#### New `getAccessToken` function in `./oauth.php` ####
+
+```PHP
+public static function getAccessToken($redirectUri) {
+  // Is there an access token in the session?
+  $current_token = $_SESSION['access_token'];
+  if (!is_null($current_token)) {
+    // Check expiration
+    $expiration = $_SESSION['token_expires'];
+    if ($expiration < time()) {
+      error_log('Token expired! Refreshing...');
+      // Token expired, refresh
+      $refresh_token = $_SESSION['refresh_token'];
+      $new_tokens = self::getTokenFromRefreshToken($refresh_token, $redirectUri);
+
+      // Update the stored tokens and expiration
+      $_SESSION['access_token'] = $new_tokens['access_token'];
+      $_SESSION['refresh_token'] = $new_tokens['refresh_token'];
+
+      // expires_in is in seconds
+      // Get current timestamp (seconds since Unix Epoch) and
+      // add expires_in to get expiration time
+      // Subtract 5 minutes to allow for clock differences
+      $expiration = time() + $new_tokens['expires_in'] - 300;
+      $_SESSION['token_expires'] = $expiration;
+
+      // Return new token
+      return $new_tokens['access_token'];
+    }
+    else {
+      // Token is still valid, return it
+      return $current_token;
+    }
+  } 
+  else {
+    return null;
+  }
+}
+```
+
+This method checks the expiration time. If the current time is greater than the expiration, it calls our `getTokenFromRefreshToken` function to refresh. Otherwise, it just returns the cached token.
+
+Now that we have an access token and we can refresh if needed, we're ready to use the Mail API.
 
 ## Using the Mail API ##
 
@@ -501,7 +617,7 @@ Update `./home.php` to call the `getMessages` function and display the results.
     <?php
       }
       else {
-        $messages = OutlookService::getMessages($_SESSION['access_token'], $_SESSION['user_email']);
+        $messages = OutlookService::getMessages(oAuthService::getAccessToken($redirectUri), $_SESSION['user_email']);
     ?>
       <!-- User is logged in, do something here -->
       <p>Messages: <?php echo print_r($messages) ?></p>
@@ -545,7 +661,7 @@ Update `./home.php` one final time to generate the table.
     <?php
       }
       else {
-        $messages = OutlookService::getMessages($_SESSION['access_token'], $_SESSION['user_email']);
+        $messages = OutlookService::getMessages(oAuthService::getAccessToken($redirectUri), $_SESSION['user_email']);
     ?>
       <!-- User is logged in, do something here -->
       <h2>Your messages</h2>
