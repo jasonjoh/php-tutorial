@@ -3,6 +3,17 @@
   class OutlookService {
     private static $outlookApiUrl = "https://outlook.office.com/api/v2.0";
     
+    public static function getUser($access_token) {
+      $getUserParameters = array (
+        // Only return the user's display name and email address
+        "\$select" => "DisplayName,EmailAddress"
+      );
+
+      $getUserUrl = self::$outlookApiUrl."/Me?".http_build_query($getUserParameters);
+
+      return self::makeApiCall($access_token, "", "GET", $getUserUrl);
+    }
+
     public static function getMessages($access_token, $user_email) {
       $getMessagesParameters = array (
         // Only return Subject, ReceivedDateTime, and From fields
@@ -13,7 +24,7 @@
         "\$top" => "10"
       );
       
-      $getMessagesUrl = self::$outlookApiUrl."/Me/Messages?".http_build_query($getMessagesParameters);
+      $getMessagesUrl = self::$outlookApiUrl."/Me/MailFolders/Inbox/Messages?".http_build_query($getMessagesParameters);
                         
       return self::makeApiCall($access_token, $user_email, "GET", $getMessagesUrl);
     }

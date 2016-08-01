@@ -77,25 +77,6 @@
       
       return $json_vals;
     }
-    
-    public static function getUserEmailFromIdToken($idToken) {
-      error_log("ID TOKEN: ".$idToken);
-      
-      // JWT is made of three parts, separated by a '.' 
-      // First part is the header 
-      // Second part is the token 
-      // Third part is the signature 
-      $token_parts = explode(".", $idToken);
-      
-      // We care about the token
-      // URL decode first
-      $token = strtr($token_parts[1], "-_", "+/");
-      // Then base64 decode
-      $jwt = base64_decode($token);
-      // Finally parse it as JSON
-      $json_token = json_decode($jwt, true);
-      return $json_token['preferred_username'];
-    }
   }
 ?>
 
