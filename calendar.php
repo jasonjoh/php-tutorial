@@ -34,8 +34,8 @@
         <?php foreach($events['value'] as $event) { ?>
           <tr>
             <td><?php echo $event['Subject'] ?></td>
-            <td><?php echo $event['Start'] ?></td>
-            <td><?php echo $event['End'] ?></td>
+            <td><?php echo $event['Start']['DateTime'] ?></td>
+            <td><?php echo $event['End']['DateTime'] ?></td>
           </tr>
         <?php } ?>
       </table>

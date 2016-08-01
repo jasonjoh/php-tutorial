@@ -7,8 +7,9 @@
     private static $authorizeUrl = '/common/oauth2/v2.0/authorize?client_id=%1$s&redirect_uri=%2$s&response_type=code&scope=%3$s';
     private static $tokenUrl = "/common/oauth2/v2.0/token";
     
-    // The app only needs openid (for user's ID info), and Mail.Read
-    private static $scopes = array("openid", 
+    // The scopes the app requires
+    private static $scopes = array("openid",
+                                   "offline_access",
                                    "https://outlook.office.com/mail.read",
                                    "https://outlook.office.com/calendars.read",
                                    "https://outlook.office.com/contacts.read");
@@ -23,12 +24,25 @@
       error_log("Generated login URL: ".$loginUrl);
       return $loginUrl;
     }
-    
+
     public static function getTokenFromAuthCode($authCode, $redirectUri) {
+      return self::getToken("authorization_code", $authCode, $redirectUri);
+    }
+
+    public static function getTokenFromRefreshToken($refreshToken, $redirectUri) {
+      return self::getToken("refresh_token", $refreshToken, $redirectUri);
+    }
+    
+    public static function getToken($grantType, $code, $redirectUri) {
+      $parameter_name = $grantType;
+      if (strcmp($parameter_name, 'authorization_code') == 0) {
+        $parameter_name = 'code';
+      }
+
       // Build the form data to post to the OAuth2 token endpoint
       $token_request_data = array(
-        "grant_type" => "authorization_code",
-        "code" => $authCode,
+        "grant_type" => $grantType,
+        $parameter_name => $code,
         "redirect_uri" => $redirectUri,
         "scope" => implode(" ", self::$scopes),
         "client_id" => self::$clientId,
@@ -77,24 +91,41 @@
       
       return $json_vals;
     }
-    
-    public static function getUserEmailFromIdToken($idToken) {
-      error_log("ID TOKEN: ".$idToken);
-      
-      // JWT is made of three parts, separated by a '.' 
-      // First part is the header 
-      // Second part is the token 
-      // Third part is the signature 
-      $token_parts = explode(".", $idToken);
-      
-      // We care about the token
-      // URL decode first
-      $token = strtr($token_parts[1], "-_", "+/");
-      // Then base64 decode
-      $jwt = base64_decode($token);
-      // Finally parse it as JSON
-      $json_token = json_decode($jwt, true);
-      return $json_token['preferred_username'];
+
+    public static function getAccessToken($redirectUri) {
+      // Is there an access token in the session?
+      $current_token = $_SESSION['access_token'];
+      if (!is_null($current_token)) {
+        // Check expiration
+        $expiration = $_SESSION['token_expires'];
+        if ($expiration < time()) {
+          error_log('Token expired! Refreshing...');
+          // Token expired, refresh
+          $refresh_token = $_SESSION['refresh_token'];
+          $new_tokens = self::getTokenFromRefreshToken($refresh_token, $redirectUri);
+
+          // Update the stored tokens and expiration
+          $_SESSION['access_token'] = $new_tokens['access_token'];
+          $_SESSION['refresh_token'] = $new_tokens['refresh_token'];
+
+          // expires_in is in seconds
+          // Get current timestamp (seconds since Unix Epoch) and
+          // add expires_in to get expiration time
+          // Subtract 5 minutes to allow for clock differences
+          $expiration = time() + $new_tokens['expires_in'] - 300;
+          $_SESSION['token_expires'] = $expiration;
+
+          // Return new token
+          return $new_tokens['access_token'];
+        }
+        else {
+          // Token is still valid, return it
+          return $current_token;
+        }
+      } 
+      else {
+        return null;
+      }
     }
   }
 ?>
