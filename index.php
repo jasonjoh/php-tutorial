@@ -5,7 +5,7 @@
   require('outlook.php');
   
   $loggedIn = !is_null($_SESSION['access_token']);
-  $redirectUri = 'http://localhost/php-tutorial/authorize.php';
+  $redirectUri = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['SERVER_NAME'] . '/authorize.php';
 ?>
 
 <html>

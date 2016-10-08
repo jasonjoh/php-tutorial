@@ -4,7 +4,7 @@
   require_once('oauth.php');
   require_once('outlook.php');
   $auth_code = $_GET['code'];
-  $redirectUri = 'http://localhost/php-tutorial/authorize.php';
+  $redirectUri = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['SERVER_NAME'] . '/authorize.php';
   
   $tokens = oAuthService::getTokenFromAuthCode($auth_code, $redirectUri);
   
@@ -23,8 +23,8 @@
     $user = OutlookService::getUser($tokens['access_token']);
     $_SESSION['user_email'] = $user['EmailAddress'];
     
-    // Redirect back to home page
-    header("Location: http://localhost/php-tutorial/home.php");
+    // Redirect back to index page
+    header("Location: /index.php");
   }
   else
   {
