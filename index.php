@@ -4,7 +4,7 @@
   require('oauth.php');
   require('outlook.php');
   
-  $loggedIn = !is_null($_SESSION['access_token']);
+  $loggedIn = (isset($_SESSION['access_token'])) ? !is_null($_SESSION['access_token']) : false;
   $redirectUri = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['SERVER_NAME'] . '/authorize.php';
 ?>
 
