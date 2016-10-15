@@ -1,10 +1,7 @@
 <?php
-
 namespace Microsoft;
 
-session_start();
-require('oauth.php');
-require('outlook.php');
+require_once('bootstrap.php');
 
 ?>
 <html>
@@ -12,11 +9,11 @@ require('outlook.php');
 		<title>PHP Mail API Tutorial</title>
 	</head>
     <body>
-<?php   if (!oAuthService::loggedIn()): ?>
+<?php   if (!Service\OAuth::loggedIn()): ?>
         <!-- User not logged in, prompt for login -->
-        <p>Please <a href="<?=oAuthService::getLoginUrl(oAuthService::getRedirectUri())?>">sign in</a> with your Office 365 or Outlook.com account.</p>
+        <p>Please <a href="<?=Service\OAuth::getLoginUrl(Service\OAuth::getRedirectUri())?>">sign in</a> with your Office 365 or Outlook.com account.</p>
 <?php   else: ?>
-<?php      $messages = OutlookService::getMessages(oAuthService::getAccessToken(oAuthService::getRedirectUri()), $_SESSION['user_email']); ?>
+<?php      $messages = Service\Outlook::getMessages(Service\OAuth::getAccessToken(Service\OAuth::getRedirectUri()), $_SESSION['user_email']); ?>
         <!-- User is logged in, do something here -->
         <h2>Your messages</h2>
         <table>

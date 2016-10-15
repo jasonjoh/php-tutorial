@@ -1,14 +1,11 @@
 <?php
-
 namespace Microsoft;
 
-session_start();
-require_once('oauth.php');
-require_once('outlook.php');
+require_once('bootstrap.php');
 
 $auth_code = $_GET['code'];
 
-$tokens = oAuthService::getTokenFromAuthCode($auth_code, oAuthService::getRedirectUri());
+$tokens = Service\OAuth::getTokenFromAuthCode($auth_code, Service\OAuth::getRedirectUri());
 
 if ($tokens['access_token']) {
     $_SESSION['access_token'] = $tokens['access_token'];
@@ -22,7 +19,7 @@ if ($tokens['access_token']) {
     $_SESSION['token_expires'] = $expiration;
 
     // Get the user's email
-    $user = OutlookService::getUser($tokens['access_token']);
+    $user = Service\Outlook::getUser($tokens['access_token']);
     $_SESSION['user_email'] = $user['EmailAddress'];
 
     // Redirect back to index page

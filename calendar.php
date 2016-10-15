@@ -1,10 +1,7 @@
 <?php
-
 namespace Microsoft;
 
-session_start();
-require('oauth.php');
-require('outlook.php');
+require_once('bootstrap.php');
 
 ?>
 <html>
@@ -12,11 +9,11 @@ require('outlook.php');
         <title>PHP Calendar API Tutorial</title>
     </head>
     <body>
-<?php   if (!oAuthService::loggedIn()): ?>
+<?php   if (!Service\OAuth::loggedIn()): ?>
         <!-- User not logged in, prompt for login -->
-        <p>Please <a href="<?=oAuthService::getLoginUrl(oAuthService::getRedirectUri())?>">sign in</a> with your Office 365 or Outlook.com account.</p>
+        <p>Please <a href="<?=Service\OAuth::getLoginUrl(Service\OAuth::getRedirectUri())?>">sign in</a> with your Office 365 or Outlook.com account.</p>
 <?php   else: ?>
-<?php       $events = OutlookService::getEvents($_SESSION['access_token'], $_SESSION['user_email']); ?>
+<?php       $events = Service\Outlook::getEvents($_SESSION['access_token'], $_SESSION['user_email']); ?>
         <!-- User is logged in, do something here -->
         <h2>Your events</h2>
         <table>
@@ -32,7 +29,7 @@ require('outlook.php');
                 <td><?=$event['End']['DateTime']; ?></td>
             </tr>
 <?php       endforeach; ?>
-      </table>
+        </table>
 <?php   endif; ?>
-  </body>
+    </body>
 </html>
