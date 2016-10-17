@@ -7,7 +7,7 @@ $auth_code = $_GET['code'];
 
 $tokens = Service\OAuth::getTokenFromAuthCode($auth_code, Service\OAuth::getRedirectUri());
 
-if ($tokens['access_token']) {
+if (isset($tokens['access_token'])) {
     $_SESSION['access_token'] = $tokens['access_token'];
     $_SESSION['refresh_token'] = $tokens['refresh_token'];
 
