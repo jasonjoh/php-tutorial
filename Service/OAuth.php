@@ -57,45 +57,61 @@ class OAuth
             "client_secret" => self::$clientSecret
         ];
 
-        // Calling http_build_query is important to get the data
-        // formatted as expected.
+        // Calling http_build_query is important to get the data formatted as expected.
         $token_request_body = http_build_query($token_request_data);
         error_log("Request body: ".$token_request_body);
 
-        $curl = curl_init(self::$authority.self::$tokenUrl);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $token_request_body);
+        $response = file_get_contents(
+            self::$authority.self::$tokenUrl,
+            false,
+            stream_context_create([
+                'http'=> [
+                    'method' => 'POST',
+                    'timeout' => 15.0,
+                    'content' => $token_request_body,
+                    'ignore_errors' => true,
+                    'header' => "Content-Type: application/x-www-form-urlencoded\r\n"
+                ]
+            ])
+        );
+        error_log("file_get_contents done.");
 
-        $response = curl_exec($curl);
-        error_log("curl_exec done.");
-
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        # http_response_header is a predefined variable created after the
+        # use of an HTTP wrapper such as file_get_contents above.
+        $httpCode = (function() use ($http_response_header) {
+            foreach ($http_response_header as $header) {
+                preg_match("#HTTP/[0-9\.]+\s+([0-9]+)#", $header, $httpCode);
+                return $httpCode[0];
+            }
+        })();
         error_log("Request returned status ".$httpCode);
+
         if ($httpCode >= 400) {
-            return ['errorNumber' => $httpCode, 'error' => 'Token request returned HTTP error '.$httpCode];
+            return [
+                'errorNumber' => $httpCode,
+                'error' => 'Token request returned HTTP error '.$httpCode
+            ];
         }
 
-        // Check error
-        $curl_errno = curl_errno($curl);
-        $curl_err = curl_error($curl);
-        if ($curl_errno) {
-            $msg = $curl_errno.": ".$curl_err;
-            error_log("CURL returned an error: ".$msg);
-            return ['errorNumber' => $curl_errno, 'error' => $msg];
-        }
-
-        curl_close($curl);
-
-        // The response is a JSON payload, so decode it into
-        // an array.
-        $json_vals = json_decode($response, true);
+        # The response is a JSON payload, so decode it into an array.
+        $json = json_decode($response, true);
         error_log("TOKEN RESPONSE:");
-        foreach ($json_vals as $key=>$value) {
-            error_log("  ".$key.": ".$value);
+        foreach ($json as $key => $value) {
+            if (!is_array($value)) {
+                error_log("  ".$key.": ".$value);
+            } else {
+                error_log("  ".$key.": ".implode(',', $value));
+            }
         }
 
-        return $json_vals;
+        if (isset($json['error'])) {
+            return [
+                'errorNumber' => $json['error_codes'],
+                'error' => $json['error_description']
+            ];
+        }
+
+        return $json;
     }
 
     public static function getAccessToken($redirectUri)

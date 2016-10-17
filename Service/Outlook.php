@@ -66,7 +66,10 @@ class Outlook {
     
     public static function makeApiCall($access_token, $user_email, $method, $url, $payload = NULL)
     {
-        // Generate the list of headers to always send.
+        # Normalize $method.
+        $method = strtoupper($method);
+
+        # Generate the list of headers to always send.
         $headers = [
             "User-Agent: php-tutorial/1.0",         // Sending a User-Agent header is a best practice.
             "Authorization: Bearer ".$access_token, // Always need our auth token!
@@ -76,62 +79,53 @@ class Outlook {
             "X-AnchorMailbox: ".$user_email         // Provider user's email to optimize routing of API call
         ];
 
-        $curl = curl_init($url);
+        # And the context to send the data in.
+        $context = [
+            'ignore_errors' => true,
+            'method' => $method,
+        ];
 
-        switch(strtoupper($method)) {
+        switch($method) {
             case "GET":
-                // Nothing to do, GET is the default and needs no
-                // extra headers.
-                error_log("Doing GET");
+                # Nothing to do, GET is the default and needs no extra headers.
                 break;
             case "POST":
-                error_log("Doing POST");
-                // Add a Content-Type header (IMPORTANT!)
-                $headers[] = "Content-Type: application/json";
-                curl_setopt($curl, CURLOPT_POST, true);
-                curl_setopt($curl, CURLOPT_POSTFIELDS, $payload);
-                break;
             case "PATCH":
-                error_log("Doing PATCH");
-                // Add a Content-Type header (IMPORTANT!)
                 $headers[] = "Content-Type: application/json";
-                curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "PATCH");
-                curl_setopt($curl, CURLOPT_POSTFIELDS, $payload);
-                break;
             case "DELETE":
-                error_log("Doing DELETE");
-                curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+                $context['content'] = $payload;
                 break;
             default:
                 error_log("INVALID METHOD: ".$method);
                 exit;
         }
+        $context['header'] = implode("\r\n", $headers);
 
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        $response = curl_exec($curl);
-        error_log("curl_exec done.");
+        $response = file_get_contents(
+            $url,
+            false,
+            stream_context_create(['http' => $context])
+        );
+        error_log("file_get_contents done.");
 
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        # http_response_header is a predefined variable created after the
+        # use of an HTTP wrapper such as file_get_contents above.
+        $httpCode = (function() use ($http_response_header) {
+            foreach ($http_response_header as $header) {
+                preg_match("#HTTP/[0-9\.]+\s+([0-9]+)#", $header, $httpCode);
+                return $httpCode[0];
+            }
+        })();
         error_log("Request returned status ".$httpCode);
 
         if ($httpCode >= 400) {
-            return ['errorNumber' => $httpCode, 'error' => 'Request returned HTTP error '.$httpCode];
+            return [
+                'errorNumber' => $httpCode,
+                'error' => 'Token request returned HTTP error '.$httpCode
+            ];
         }
 
-        $curl_errno = curl_errno($curl);
-        $curl_err = curl_error($curl);
-
-        if ($curl_errno) {
-            $msg = $curl_errno.": ".$curl_err;
-            error_log("CURL returned an error: ".$msg);
-            curl_close($curl);
-            return ['errorNumber' => $curl_errno, 'error' => $msg];
-        } else {
-            error_log("Response: ".$response);
-            curl_close($curl);
-            return json_decode($response, true);
-        }
+        return json_decode($response, true);
     }
 
     // This function generates a random GUID.
