@@ -44,4 +44,5 @@ Temporary Items
 deploy.bat
 README.html
 
+.env
 vendor/
