@@ -46,3 +46,4 @@ README.html
 
 .env
 vendor/
+composer.lock
