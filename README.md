@@ -12,9 +12,15 @@ If you didn't follow the tutorial and just want to download this repo and try it
 
 You'll need to have [Composer](http://getcomposer.org/) and [Laravel](https://laravel.com) installed, along with PHP 5.6.4 or greater.
 
+### Initialize the app
+
+1. From the command line, run `composer update` to install dependencies.
+1. Rename the `.env.example` file to `.env`.
+1. From the command line, run `php artisan key:generate`.
+
 ### Register the app
 
-Head over to https://apps.dev.microsoft.com to quickly get a client ID and secret. Using the sign in buttons, sign in with either your Microsoft account (Outlook.com), or your work or school account (Office 365).
+Head over to https://apps.dev.microsoft.com to quickly get an application ID and secret. Using the sign in buttons, sign in with either your Microsoft account (Outlook.com), or your work or school account (Office 365).
 
 Once you're signed in, click the **Add an app** button. Enter `php-tutorial` for the name and click **Create application**. After the app is created, locate the **Application Secrets** section, and click the **Generate New Password** button. Copy the password now and save it to a safe place. Once you've copied the password, click **Ok**.
 
@@ -23,6 +29,8 @@ Locate the **Platforms** section, and click **Add Platform**. Choose **Web**, th
 Here's what the details of your app registration should look like when you are done.
 
 ![The completed registration properties.](./readme-images/php-tutorial.PNG)
+
+Open the `.env` file and replace `YOUR_APP_ID_HERE` with the application ID you generated. Replace `YOUR_APP_PASSWORD_HERE` with the password you generated. Save your changes.
 
 ### Start the Laravel server
 

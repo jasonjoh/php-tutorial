@@ -8,7 +8,8 @@ use Microsoft\Graph\Model;
 
 class OutlookController extends Controller
 {
-  public function mail() {
+  public function mail() 
+  {
     if (session_status() == PHP_SESSION_NONE) {
       session_start();
     }
@@ -44,7 +45,8 @@ class OutlookController extends Controller
     ));
   }
 
-  public function calendar() {
+  public function calendar() 
+  {
     if (session_status() == PHP_SESSION_NONE) {
       session_start();
     }
@@ -80,7 +82,8 @@ class OutlookController extends Controller
     ));
   }
 
-  public function contacts() {
+  public function contacts() 
+  {
     if (session_status() == PHP_SESSION_NONE) {
       session_start();
     }
