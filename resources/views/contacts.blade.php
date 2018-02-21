@@ -13,7 +13,7 @@
       foreach($contacts as $contact) { ?>
     <div class="list-group-item">
       <h3 class="list-group-item-heading"><?php echo $contact->getGivenName().' '.$contact->getSurname() ?></h3>
-      <p class="list-group-item-heading"><?php echo $contact->getEmailAddresses()[0]['address']?></p>
+      <p class="list-group-item-heading"><?php if ($contact->getEmailAddresses()) echo $contact->getEmailAddresses()[0]['address']?></p>
     </div>
     <?php  }
     } ?>
