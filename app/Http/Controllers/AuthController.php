@@ -27,7 +27,6 @@ class AuthController extends Controller
     $authorizationUrl = $oauthClient->getAuthorizationUrl();
 
     // Save client state so we can validate in response
-    \Log::info('State for auth request: '.$oauthClient->getState());
     $_SESSION['oauth_state'] = $oauthClient->getState();
 
     // Redirect to authorization endpoint

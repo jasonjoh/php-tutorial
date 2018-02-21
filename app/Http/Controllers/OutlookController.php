@@ -34,13 +34,11 @@ class OutlookController extends Controller
 
     $getMessagesUrl = '/me/mailfolders/inbox/messages?'.http_build_query($messageQueryParams);
     $messages = $graph->createRequest('GET', $getMessagesUrl)
-                      ->addHeaders(array ('X-AnchorMailbox' => $user->getMail()))
                       ->setReturnType(Model\Message::class)
                       ->execute();
 
     return view('mail', array(
       'username' => $user->getDisplayName(),
-      'usermail' => $user->getMail(),
       'messages' => $messages
     ));
   }
@@ -71,13 +69,11 @@ class OutlookController extends Controller
 
     $getEventsUrl = '/me/events?'.http_build_query($eventsQueryParams);
     $events = $graph->createRequest('GET', $getEventsUrl)
-                    ->addHeaders(array ('X-AnchorMailbox' => $user->getMail()))
                     ->setReturnType(Model\Event::class)
                     ->execute();
 
     return view('calendar', array(
       'username' => $user->getDisplayName(),
-      'usermail' => $user->getMail(),
       'events' => $events
     ));
   }
@@ -108,13 +104,11 @@ class OutlookController extends Controller
 
     $getContactsUrl = '/me/contacts?'.http_build_query($contactsQueryParams);
     $contacts = $graph->createRequest('GET', $getContactsUrl)
-                      ->addHeaders(array ('X-AnchorMailbox' => $user->getMail()))
                       ->setReturnType(Model\Contact::class)
                       ->execute();
 
     return view('contacts', array(
       'username' => $user->getDisplayName(),
-      'usermail' => $user->getMail(),
       'contacts' => $contacts
     ));
   }
